@@ -183,6 +183,7 @@ class Clan():
 
         self.faded_ids = [
         ]  # Stores ID's of faded cats, to ensure these IDs aren't reused.
+        self.moons_since_fed = 0
         if (self_run_init_functions):
             self.post_initialization_functions()
         self.disaster = ""
@@ -525,6 +526,8 @@ class Clan():
         # Patrolled cats
         clan_data["patrolled_cats"] = [str(i) for i in game.patrolled]
 
+        clan_data["moons_since_fed"] = self.moons_since_fed
+
         # OTHER CLANS
         # Clan Names
         clan_data["other_clans_names"] = ",".join(
@@ -832,6 +835,7 @@ class Clan():
         game.clan.starting_season = clan_data[
             "starting_season"] if "starting_season" in clan_data else 'Newleaf'
         get_current_season()
+        game.clan.moons_since_fed = clan_data["moons_since_fed"] if "moons_since_fed" in clan_data else 0
 
         # Instructor Info
         if clan_data["instructor"] in Cat.all_cats:

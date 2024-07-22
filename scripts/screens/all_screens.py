@@ -35,6 +35,8 @@ from .AffairScreen import AffairScreen
 from .ClearingScreen import ClearingScreen
 from .QueenScreen import QueenScreen
 from .MoonplaceScreen import MoonplaceScreen
+from .IntroScreen import IntroScreen
+from .TrialScreen import TrialScreen
 from .WarriorDenScreen import WarriorDenScreen
 from .GiftScreen import GiftScreen
 
@@ -68,6 +70,8 @@ profile_screen = ProfileScreen('profile screen')
 ceremony_screen = CeremonyScreen('ceremony screen')
 role_screen = RoleScreen('role screen')
 sprite_inspect_screen = SpriteInspectScreen("sprite inspect screen")
+
+intro_screen = IntroScreen('intro screen')
 make_clan_screen = MakeClanScreen('make clan screen')
 allegiances_screen = AllegiancesScreen('allegiances screen')
 camp_screen = ClanScreen('camp screen')
@@ -81,6 +85,11 @@ settings_screen = SettingsScreen('settings screen')
 clan_settings_screen = ClanSettingsScreen('clan settings screen')
 start_screen = StartScreen('start screen')
 switch_clan_screen = SwitchClanScreen('switch clan screen')
+
+
+patrol_screen = PatrolScreen('patrol screen')
+trial_screen = TrialScreen('trial screen')
+
 choose_mate_screen = ChooseMateScreen('choose mate screen')
 choose_mentor_screen = ChooseMentorScreen('choose mentor screen')
 choose_adoptive_parent_screen = ChooseAdoptiveParentScreen('choose adoptive parent screen')

@@ -233,7 +233,7 @@ class GameOver(UIWindow):
         self.clan_name = str(game.clan.name + 'Clan')
         self.last_screen = last_screen
         self.game_over_message = UITextBoxTweaked(
-            f"{self.clan_name} has died out. For now, this is where their story ends. Perhaps it's time to tell a new "
+            f"The woods have won. Perhaps it's time to tell a new "
             f"tale?",
             scale(pygame.Rect((40, 40), (520, -1))),
             line_spacing=1,
@@ -671,6 +671,7 @@ class KillCat(UIWindow):
 
                 self.the_cat.die()
                 self.history.add_death(self.the_cat, death_message)
+                game.clan.moons_since_fed = 0
                 update_sprite(self.the_cat)
                 game.switches['window_open'] = False
                 game.all_screens['profile screen'].exit_screen()

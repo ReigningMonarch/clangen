@@ -336,7 +336,8 @@ while True:
                                                 'switch clan screen',
                                                 'settings screen',
                                                 'info screen',
-                                                'make clan screen']
+                                                'make clan screen',
+                                                'intro screen']
                 or not game.clan):
                 quit(savesettings=False)
             else:

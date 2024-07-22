@@ -1578,7 +1578,16 @@ class ProfileScreen(Screens):
             else:
                 output += "<font color ='#450E7B'>" "ghost " + the_cat.status + "</font>"
         else:
-            output += the_cat.status
+            if the_cat.status == 'leader':
+                output+= "secret keeper"
+            elif the_cat.status == 'deputy':
+                output+= "secret keeper's apprentice"
+            elif the_cat.status == 'medicine cat':
+                output+= "protector of secrets"
+            elif the_cat.status == 'medicine cat apprentice':
+                output+= "apprentice protector of secrets"
+            else:
+                output += the_cat.status
 
         # NEWLINE ----------
         output += "\n"

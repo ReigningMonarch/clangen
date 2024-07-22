@@ -292,8 +292,9 @@ class Patrol():
         elif int(reputation) >= 71:
             welcoming_rep = True
             chance = welcoming_chance
-
-        if game.current_screen == 'patrol screen2':
+        if game.current_screen == "trial screen":
+            possible_patrols.extend(self.generate_patrol_events(self.TRIAL))
+        else:
             possible_patrols.extend(self.generate_patrol_events(self.HUNTING))
             possible_patrols.extend(self.generate_patrol_events(self.HUNTING_SZN))
             possible_patrols.extend(self.generate_patrol_events(self.BORDER))
@@ -306,40 +307,11 @@ class Patrol():
             possible_patrols.extend(self.generate_patrol_events(self.BORDER_GEN))
             possible_patrols.extend(self.generate_patrol_events(self.TRAINING_GEN))
             possible_patrols.extend(self.generate_patrol_events(self.MEDCAT_GEN))
-        elif game.current_screen == 'patrol screen':
-            if game.clan.your_cat.status == 'kitten':
-                possible_patrols.extend(self.generate_patrol_events(self.kit_lifegen))
-            elif game.clan.your_cat.status == 'apprentice':
-                possible_patrols.extend(self.generate_patrol_events(self.app_lifegen))
-            elif game.clan.your_cat.status == 'medicine cat apprentice':
-                possible_patrols.extend(self.generate_patrol_events(self.medapp_lifegen))
-            elif game.clan.your_cat.status == 'mediator apprentice':
-                possible_patrols.extend(self.generate_patrol_events(self.mediatorapp_lifegen))
-            elif game.clan.your_cat.status == "queen's apprentice":
-                possible_patrols.extend(self.generate_patrol_events(self.queenapp_lifegen))
-            elif game.clan.your_cat.status == "queen":
-                possible_patrols.extend(self.generate_patrol_events(self.queen_lifegen))
-            elif game.clan.your_cat.status == 'medicine cat':
-                possible_patrols.extend(self.generate_patrol_events(self.med_lifegen))
-            elif game.clan.your_cat.status == 'mediator':
-                possible_patrols.extend(self.generate_patrol_events(self.mediator_lifegen))
-            elif game.clan.your_cat.status == 'deputy':
-                possible_patrols.extend(self.generate_patrol_events(self.deputy_lifegen))
-            elif game.clan.your_cat.status == 'leader':
-                possible_patrols.extend(self.generate_patrol_events(self.leader_lifegen))
-            elif game.clan.your_cat.status == 'elder':
-                possible_patrols.extend(self.generate_patrol_events(self.elder_lifegen))
-            else:
-                possible_patrols.extend(self.generate_patrol_events(self.warrior_lifegen))
-        elif game.current_screen == 'patrol screen4':
-            possible_patrols.extend(self.generate_patrol_events(self.date_lifegen))
-        else:
-            possible_patrols.extend(self.generate_patrol_events(self.df_lifegen))
 
-        if game_setting_disaster and game.current_screen == 'patrol screen2':
-            dis_chance = int(random.getrandbits(3))  # disaster patrol chance
-            if dis_chance == 1:
-                possible_patrols.extend(self.generate_patrol_events(self.DISASTER))
+            if game_setting_disaster:
+                dis_chance = int(random.getrandbits(3))  # disaster patrol chance
+                if dis_chance == 1:
+                    possible_patrols.extend(self.generate_patrol_events(self.DISASTER))
 
         # new cat patrols
         if chance == 1 and game.current_screen == 'patrol screen2':
@@ -722,9 +694,11 @@ class Patrol():
                 filtered_patrols.append(patrol)
         
         # make sure the hunting patrols are balanced
-        if patrol_type == 'hunting':
+        if patrol_type == 'hunting' and not game.current_screen == 'trial screen':
             filtered_patrols = self.balance_hunting(filtered_patrols)
 
+        if game.current_screen == "trial screen":
+            return possible_patrols, []
         return filtered_patrols, romantic_patrols
 
     def get_filtered_patrols(self, possible_patrols, biome, camp, current_season, patrol_type):
@@ -1226,6 +1200,10 @@ class Patrol():
                         break
 
         text = text.replace('c_n', str(game.clan.name) + 'Clan')
+        if game.clan.leader and not game.clan.leader.outside and not game.clan.leader.dead:
+            text = text.replace('lead_name', str(game.clan.leader.name))
+        else:
+            text = text.replace('lead_name', "The protector of secrets")
 
         # Prey lists for forest random prey patrols
         fst_tinyprey_singlular = ['shrew', 'robin', 'vole', 'dormouse', 'blackbird',
