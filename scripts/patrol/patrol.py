@@ -877,6 +877,9 @@ class Patrol():
     def update_resources(self, biome_dir, leaf):
         resource_dir = "resources/dicts/patrols/"
         if game.current_screen == 'patrol screen2':
+            self.TRIAL = None
+            with open(f"{resource_dir}general/trial.json", 'r', encoding='ascii') as read_file:
+                self.TRIAL = ujson.loads(read_file.read())
             # HUNTING #
             self.HUNTING_SZN = None
             with open(f"{resource_dir}{biome_dir}hunting/{leaf}.json", 'r', encoding='ascii') as read_file:
