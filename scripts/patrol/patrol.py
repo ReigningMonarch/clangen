@@ -339,7 +339,7 @@ class Patrol():
                 possible_patrols.extend(self.generate_patrol_events(self.df_lifegen))
         
 
-            if game_setting_disaster:
+            if game_setting_disaster and game.current_screen == 'patrol screen2':
                 dis_chance = int(random.getrandbits(3))  # disaster patrol chance
                 if dis_chance == 1:
                     possible_patrols.extend(self.generate_patrol_events(self.DISASTER))
