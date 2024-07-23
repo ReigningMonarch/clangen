@@ -440,7 +440,7 @@ class PatrolScreen(Screens):
                                                                  , manager=MANAGER)
         self.elements["cat_frame"].disable()
 
-        self.elements["patrol_button"] = UIImageButton(scale(pygame.Rect((770, 200), (68, 68))),
+        self.elements["patrol_button"] = UIImageButton(scale(pygame.Rect((550, 200), (68, 68))),
                                                                  "", object_id="#claws_patrol_button", tool_tip_text="Switch to Apprentice Trials", manager=MANAGER)
 
         # Frames
