@@ -98,6 +98,8 @@ class PatrolScreen(Screens):
             if event.ui_element == self.elements['your_cat']:
                 self.change_screen("patrol screen")
                 self.elements['your_cat'].disable()
+        if event.ui_element == self.elements["patrol_button"]:
+            self.change_screen("trial screen")
         if event.ui_element == self.elements["random"]:
             self.selected_cat = choice(self.able_cats)
             self.update_selected_cat()

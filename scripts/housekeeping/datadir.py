@@ -32,8 +32,8 @@ def get_data_dir():
     from platformdirs import user_data_dir
 
     if get_version_info().is_dev():
-        return user_data_dir('LifeGen', 'LifeGen')
-    return user_data_dir('LifeGen', 'LifeGen')
+        return user_data_dir('Life_Woods', 'Life_Woods')
+    return user_data_dir('Life_Woods', 'Life_Woods')
 
 
 def get_log_dir():
