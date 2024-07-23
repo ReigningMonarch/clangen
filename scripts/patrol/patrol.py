@@ -295,18 +295,49 @@ class Patrol():
         if game.current_screen == "trial screen":
             possible_patrols.extend(self.generate_patrol_events(self.TRIAL))
         else:
-            possible_patrols.extend(self.generate_patrol_events(self.HUNTING))
-            possible_patrols.extend(self.generate_patrol_events(self.HUNTING_SZN))
-            possible_patrols.extend(self.generate_patrol_events(self.BORDER))
-            possible_patrols.extend(self.generate_patrol_events(self.BORDER_SZN))
-            possible_patrols.extend(self.generate_patrol_events(self.TRAINING))
-            possible_patrols.extend(self.generate_patrol_events(self.TRAINING_SZN))
-            possible_patrols.extend(self.generate_patrol_events(self.MEDCAT))
-            possible_patrols.extend(self.generate_patrol_events(self.MEDCAT_SZN))
-            possible_patrols.extend(self.generate_patrol_events(self.HUNTING_GEN))
-            possible_patrols.extend(self.generate_patrol_events(self.BORDER_GEN))
-            possible_patrols.extend(self.generate_patrol_events(self.TRAINING_GEN))
-            possible_patrols.extend(self.generate_patrol_events(self.MEDCAT_GEN))
+            if game.current_screen == 'patrol screen2':
+                possible_patrols.extend(self.generate_patrol_events(self.HUNTING))
+                possible_patrols.extend(self.generate_patrol_events(self.HUNTING_SZN))
+                possible_patrols.extend(self.generate_patrol_events(self.BORDER))
+                possible_patrols.extend(self.generate_patrol_events(self.BORDER_SZN))
+                possible_patrols.extend(self.generate_patrol_events(self.TRAINING))
+                possible_patrols.extend(self.generate_patrol_events(self.TRAINING_SZN))
+                possible_patrols.extend(self.generate_patrol_events(self.MEDCAT))
+                possible_patrols.extend(self.generate_patrol_events(self.MEDCAT_SZN))
+                possible_patrols.extend(self.generate_patrol_events(self.HUNTING_GEN))
+                possible_patrols.extend(self.generate_patrol_events(self.BORDER_GEN))
+                possible_patrols.extend(self.generate_patrol_events(self.TRAINING_GEN))
+                possible_patrols.extend(self.generate_patrol_events(self.MEDCAT_GEN))
+            elif game.current_screen == 'patrol screen':
+                if game.clan.your_cat.status == 'kitten':
+                    possible_patrols.extend(self.generate_patrol_events(self.kit_lifegen))
+                elif game.clan.your_cat.status == 'apprentice':
+                    possible_patrols.extend(self.generate_patrol_events(self.app_lifegen))
+                elif game.clan.your_cat.status == 'medicine cat apprentice':
+                    possible_patrols.extend(self.generate_patrol_events(self.medapp_lifegen))
+                elif game.clan.your_cat.status == 'mediator apprentice':
+                    possible_patrols.extend(self.generate_patrol_events(self.mediatorapp_lifegen))
+                elif game.clan.your_cat.status == "queen's apprentice":
+                    possible_patrols.extend(self.generate_patrol_events(self.queenapp_lifegen))
+                elif game.clan.your_cat.status == "queen":
+                    possible_patrols.extend(self.generate_patrol_events(self.queen_lifegen))
+                elif game.clan.your_cat.status == 'medicine cat':
+                    possible_patrols.extend(self.generate_patrol_events(self.med_lifegen))
+                elif game.clan.your_cat.status == 'mediator':
+                    possible_patrols.extend(self.generate_patrol_events(self.mediator_lifegen))
+                elif game.clan.your_cat.status == 'deputy':
+                    possible_patrols.extend(self.generate_patrol_events(self.deputy_lifegen))
+                elif game.clan.your_cat.status == 'leader':
+                    possible_patrols.extend(self.generate_patrol_events(self.leader_lifegen))
+                elif game.clan.your_cat.status == 'elder':
+                    possible_patrols.extend(self.generate_patrol_events(self.elder_lifegen))
+                else:
+                    possible_patrols.extend(self.generate_patrol_events(self.warrior_lifegen))
+            elif game.current_screen == 'patrol screen4':
+                possible_patrols.extend(self.generate_patrol_events(self.date_lifegen))
+            else:
+                possible_patrols.extend(self.generate_patrol_events(self.df_lifegen))
+        
 
             if game_setting_disaster:
                 dis_chance = int(random.getrandbits(3))  # disaster patrol chance
