@@ -729,8 +729,7 @@ class Patrol():
             filtered_patrols = self.balance_hunting(filtered_patrols)
 
         if game.current_screen == "trial screen":
-            return possible_patrols, []
-        return filtered_patrols, romantic_patrols
+            return filtered_patrols, romantic_patrols
 
     def get_filtered_patrols(self, possible_patrols, biome, camp, current_season, patrol_type):
         
