@@ -611,9 +611,10 @@ class TrialScreen(Screens):
         # ASSIGN TO ABLE CATS
         for the_cat in Cat.all_cats_list:
             if not the_cat.dead and the_cat.in_camp and the_cat.status in [
-                'apprentice', 'mediator apprentice', 'medicine cat apprentice', 'queen apprentice'
+                'apprentice', 'mediator apprentice', 'medicine cat apprentice', "queen's apprentice"
             ] and the_cat.moons == 6 and not the_cat.outside and the_cat not in self.current_patrol and not the_cat.not_working():
-                self.able_cats.append(the_cat)
+                if "5" not in game.switches['patrolled']:
+                    self.able_cats.append(the_cat)
 
         if not self.able_cats:
             all_pages = []
