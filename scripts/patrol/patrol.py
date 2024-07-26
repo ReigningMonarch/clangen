@@ -104,6 +104,8 @@ class Patrol():
                 game.switches['patrolled'].append('1')
             elif game.current_screen == 'patrol screen3':
                 game.switches['patrolled'].append('3')
+            elif game.current_screen == 'trial screen':
+                game.switches['patrolled'].append('5')
             else:
                 game.switches['patrolled'].append('4')
         
@@ -730,9 +732,10 @@ class Patrol():
 
         if game.current_screen == "trial screen":
             return filtered_patrols, romantic_patrols
+        return filtered_patrols, romantic_patrols
 
     def get_filtered_patrols(self, possible_patrols, biome, camp, current_season, patrol_type):
-        
+
         filtered_patrols, romantic_patrols = self._filter_patrols(possible_patrols, biome, camp, current_season,
                                                                   patrol_type)
         
