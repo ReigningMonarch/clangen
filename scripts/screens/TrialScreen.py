@@ -47,6 +47,8 @@ class TrialScreen(Screens):
         self.start_patrol_thread = None
         self.proceed_patrol_thread = None
         self.outcome_art = None
+        self.dbclock = pygame.time.Clock()
+        self.cat_id = None
 
     def handle_event(self, event):
         if game.switches["window_open"]:
@@ -54,7 +56,10 @@ class TrialScreen(Screens):
         
         if event.type == pygame_gui.UI_BUTTON_START_PRESS:
             if self.patrol_stage == "choose_cats":
-                self.handle_choose_cats_events(event)
+                if self.dbclock.tick() < 500:
+                    self.handle_choose_cats_events(event, doubleclick=True)
+                else:
+                    self.handle_choose_cats_events(event, doubleclick=False)
             elif self.patrol_stage == 'patrol_events':
                 self.handle_patrol_events_event(event)
             elif self.patrol_stage == 'patrol_complete':
@@ -68,7 +73,7 @@ class TrialScreen(Screens):
             elif event.key == pygame.K_RIGHT:
                 self.change_screen('list screen')
 
-    def handle_choose_cats_events(self, event):
+    def handle_choose_cats_events(self, event, doubleclick=False):
         if event.ui_element == self.elements["patrol_button"]:
             self.change_screen("patrol screen")
         elif event.ui_element == self.elements["random"]:
@@ -76,8 +81,24 @@ class TrialScreen(Screens):
             self.update_selected_cat()
             self.update_button()
         # Check is a cat is clicked
+        elif event.ui_element in self.cat_buttons.values() and doubleclick:
+            self.selected_cat = event.ui_element.return_cat_object()
+            if self.selected_cat.ID == self.cat_id:
+                if self.selected_cat in self.current_patrol:
+                    self.current_patrol.remove(self.selected_cat)
+                else:
+                    if len(self.current_patrol) == 0:
+                        self.current_patrol.append(self.selected_cat)
+                self.update_cat_images_buttons()
+                self.update_button()
+            else:
+                self.selected_cat = event.ui_element.return_cat_object()
+                self.cat_id = self.selected_cat.ID
+                self.update_selected_cat()
+                self.update_button()
         elif event.ui_element in self.cat_buttons.values():
             self.selected_cat = event.ui_element.return_cat_object()
+            self.cat_id = self.selected_cat.ID
             self.update_selected_cat()
             self.update_button()
         elif event.ui_element == self.elements["add_remove_cat"]:
@@ -305,6 +326,11 @@ class TrialScreen(Screens):
             elif self.patrol_screen == 'skills':
                 self.elements['patrol_tab'].enable()
                 self.elements['skills'].disable()
+            
+            if len(self.current_patrol) == 1 and self.selected_cat in self.current_patrol:
+                self.elements["add_remove_cat"].enable()
+            elif len(self.current_patrol) == 1 and self.selected_cat not in self.current_patrol:
+                self.elements["add_remove_cat"].disable()
 
             if self.patrol_screen == 'patrol_cats':
                 self.elements['patrol_tab'].disable()
@@ -610,10 +636,15 @@ class TrialScreen(Screens):
 
         # ASSIGN TO ABLE CATS
         for the_cat in Cat.all_cats_list:
-            if not the_cat.dead and the_cat.in_camp and the_cat.status in [
+            if not the_cat.dead and the_cat.status in [
                 'apprentice', 'mediator apprentice', 'medicine cat apprentice', "queen's apprentice"
             ] and the_cat.moons == 6 and not the_cat.outside and the_cat not in self.current_patrol and not the_cat.not_working():
-                if "5" not in game.switches['patrolled']:
+                if the_cat.ID == game.clan.your_cat.ID:
+                    if "patrolled" not in game.switches:
+                        game.switches['patrolled'] = []
+                    if "5" not in game.switches['patrolled']:
+                        self.able_cats.append(the_cat)
+                elif the_cat.in_camp and the_cat.ID not in game.patrolled:
                     self.able_cats.append(the_cat)
 
         if not self.able_cats:
@@ -653,12 +684,12 @@ class TrialScreen(Screens):
         pos_x = 100
         i = 0
         for cat in display_cats:
-            if game.clan.clan_settings["show fav"] and cat.favourite:
+            if game.clan.clan_settings["show fav"] and cat.favourite != 0:
                 self.fav[str(i)] = pygame_gui.elements.UIImage(
                     scale(pygame.Rect((pos_x, pos_y), (100, 100))),
                     pygame.transform.scale(
                         pygame.image.load(
-                            f"resources/images/fav_marker.png").convert_alpha(),
+                            f"resources/images/fav_marker_{cat.favorite}.png").convert_alpha(),
                         (100, 100))
                 )
                 self.fav[str(i)].disable()
