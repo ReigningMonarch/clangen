@@ -434,6 +434,9 @@ class TalkScreen(Screens):
                 with open(f"{resource_dir}focuses/{game.clan.focus}.json", 'r') as read_file:
                     possible_texts5 = ujson.loads(read_file.read())
                     possible_texts.update(possible_texts5)
+
+            with open(f"{resource_dir}woods.json", 'r') as read_file:
+                possible_texts.update(ujson.loads(read_file.read()))
                     
         return self.filter_texts(cat, possible_texts)
 
@@ -497,6 +500,21 @@ class TalkScreen(Screens):
             if "df_faith" in tags and cat.faith > 0:
                 continue
 
+            # Life in the Woods tags
+
+            if "they_fivemoons" in tags and cat.moons !=5:
+                continue
+            if "they_sixmoons" in tags and cat.moons !=6:
+                continue
+            if "they_sevenmoons" in tags and cat.moons !=7:
+                continue
+            if "you_fivemoons" in tags and you.moons !=5:
+                continue
+            if "you_sixmoons" in tags and you.moons !=6:
+                continue
+            if "you_sevenmoons" in tags and you.moons !=7:
+                continue
+            
             # Status tags
             if you.status not in tags and "any" not in tags and f"you_{you.status}" not in tags and "young elder" not in tags and "no_kit" not in tags and "you_any" not in tags:
                 continue
@@ -1394,6 +1412,14 @@ class TalkScreen(Screens):
                 weight += 3
             if "focus" in tags or "connected" in tags:
                 weight += 8
+            if "woods" in tags:
+                weight +=10
+            if "they_fivemoons" in tags:
+                weight += 50
+            if "they_sixmoons" in tags:
+                weight += 50
+            if "they_sevenmoons" in tags:
+                weight += 50
             weights.append(weight)
 
         # Check for debug mode
@@ -4257,7 +4283,6 @@ class TalkScreen(Screens):
                         text = re.sub(r'(?<!\/)e_c(?!\/)', str(alive_app.name), text)
         except:
             return ""
-        
         return text
 
     def backstory_text(self, cat):

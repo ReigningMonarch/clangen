@@ -1,0 +1,15 @@
+{
+    "woods_R1": [
+        [
+            "any",
+            "woods",
+            "they_blind",
+            "you_blind"
+        ],
+        [
+            "Ready for your trial, y_c?",
+            "I'm sure you'll do just fine. The Woods will see that you're worthy to be here.",
+            "If not then... Well. You weren't worthy, no matter how much we wish you were."
+        ]
+    ]
+}
