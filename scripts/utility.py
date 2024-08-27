@@ -2011,6 +2011,7 @@ def event_text_adjust(
     handles finding abbreviations in the text and replacing them appropriately, returns the adjusted text
     :param Cat Cat: always pass the Cat class
     :param str text: the text being adjusted
+    "param dict patrol_cat_dict: LIFEGEN: dict to hold random cat abbrevs in LG patrols
     :param Cat patrol_leader: Cat object for patrol_leader (p_l), if present
     :param Cat main_cat: Cat object for main_cat (m_c), if present
     :param Cat random_cat: Cat object for random_cat (r_c), if present
@@ -2024,7 +2025,8 @@ def event_text_adjust(
     :param OtherClan other_clan: OtherClan object for other_clan (o_c_n), if present
     :param str chosen_herb: string of chosen_herb (chosen_herb), if present
     """
-    vowels = ['A', 'E', 'I', 'O', 'U']
+    vowels = ["A", "E", "I", "O", "U"]
+
     if not text:
         text = 'This should not appear, report as a bug please! Tried to adjust the text, but no text was provided.'
         print("WARNING: Tried to adjust text, but no text was provided.")
@@ -2042,12 +2044,12 @@ def event_text_adjust(
     # random_cat
     if "r_c" in text:
         if random_cat:
-            replace_dict["r_c"] = (str(random_cat.name), choice(random_cat.pronouns))
+            replace_dict["r_c"] = (str(random_cat.name), get_pronouns(random_cat))
 
     # stat cat
     if "s_c" in text:
         if stat_cat:
-            replace_dict["s_c"] = (str(stat_cat.name), choice(stat_cat.pronouns))
+            replace_dict["s_c"] = (str(stat_cat.name), get_pronouns(stat_cat))
 
     # LIFEGEN ABBREVS
     if game.current_screen == 'patrol screen':
@@ -2087,7 +2089,7 @@ def event_text_adjust(
 
     # mur_c (murdered cat for reveals)
     if "mur_c" in text:
-        replace_dict["mur_c"] = (str(victim_cat.name), choice(victim_cat.pronouns))
+        replace_dict["mur_c"] = (str(victim_cat.name), get_pronouns(victim_cat))
 
     # lead_name
     if "lead_name" in text:
@@ -2257,7 +2259,7 @@ def ceremony_text_adjust(
             else ("mentor_placeholder", None)
         ),
         "(deadmentor)": (
-            (str(dead_mentor.name), choice(dead_mentor.pronouns))
+            (str(dead_mentor.name), get_pronouns(dead_mentor))
             if dead_mentor
             else ("dead_mentor_name", None)
         ),
@@ -2307,26 +2309,40 @@ def ceremony_text_adjust(
     ):
         cat_dict["dead_par1"] = (
             str(dead_parents[0].name),
-            choice(dead_parents[0].pronouns),
+            get_pronouns(dead_parents[0]),
         )
         cat_dict["dead_par2"] = (
             str(dead_parents[1].name),
-            choice(dead_parents[1].pronouns),
+            get_pronouns(dead_parents[1]),
         )
     elif dead_parents:
         random_dead_parent = choice(dead_parents)
         cat_dict["dead_par1"] = (
             str(random_dead_parent.name),
-            choice(random_dead_parent.pronouns),
+            get_pronouns(random_dead_parent),
         )
         cat_dict["dead_par2"] = (
             str(random_dead_parent.name),
-            choice(random_dead_parent.pronouns),
+            get_pronouns(random_dead_parent),
         )
 
     adjust_text = process_text(adjust_text, cat_dict)
 
     return adjust_text, random_living_parent, random_dead_parent
+
+def get_pronouns(Cat):
+    """ Get a cat's pronoun even if the cat has faded to prevent crashes (use gender-neutral pronouns when the cat has faded) """
+    if Cat.pronouns == []:
+        return{
+            "subject": "they",
+            "object": "them",
+            "poss": "their",
+            "inposs": "theirs",
+            "self": "themself",
+            "conju": 1,
+        }
+    else:
+        return choice(Cat.pronouns)
 
 
 def shorten_text_to_fit(
@@ -2930,13 +2946,14 @@ def cat_dict_check(abbrev, cluster, x, rel, r, text, cat_dict):
     return text, in_dict
 
 other_dict = {}   
-def adjust_txt(Cat, text, cat, cat_dict, r_c_allowed):
+def adjust_txt(Cat, text, cat, cat_dict, r_c_allowed, o_c_allowed):
     """ Adjusts dialogue text by replacing abbreviations with cat names
     :param Cat Cat: Cat class
     :param list text: The text being processed 
     :param Cat cat: The object of the cat to whom relationship addons will apply
     :param Dict cat_dict: the dict of cat objects
     :param bool r_c_allowed: Whether or not r_c will be tried for. True for dialogue, False for patrols
+    :param bool o_c_allowed: Whether or not o_c will be tried for. True for dialogue, False for patrols
     """
 
     COUNTER_LIM = 30
@@ -3568,16 +3585,16 @@ def adjust_txt(Cat, text, cat, cat_dict, r_c_allowed):
             text, in_dict = cat_dict_check("y_l", cluster, x, rel, r, text, cat_dict)
 
             if in_dict is False:
-                if len(cat.inheritance.get_siblings()) == 0:
+                if len(you.inheritance.get_siblings()) == 0:
                     return ""
                 counter = 0
-                sibling = Cat.fetch_cat(choice(cat.inheritance.get_siblings()))
+                sibling = Cat.fetch_cat(choice(you.inheritance.get_siblings()))
                 addon_check = abbrev_addons(cat, sibling, cluster, x, rel, r)
-                while sibling.outside or sibling.dead or sibling.ID == game.clan.your_cat.ID or sibling.ID == cat.ID or sibling.moons != cat.moons or addon_check is False:
+                while sibling.outside or sibling.dead or sibling.ID == you.ID or sibling.ID == cat.ID or sibling.moons != cat.moons or addon_check is False:
                     counter += 1
                     if counter > COUNTER_LIM:
                         return ""
-                    sibling = Cat.fetch_cat(choice(cat.inheritance.get_siblings()))
+                    sibling = Cat.fetch_cat(choice(you.inheritance.get_siblings()))
                     addon_check = abbrev_addons(cat, sibling, cluster, x, rel, r)
 
                 text = add_to_cat_dict("y_l", cluster, x, rel, r, sibling, text, cat_dict)
@@ -3991,15 +4008,16 @@ def adjust_txt(Cat, text, cat, cat_dict, r_c_allowed):
 
                     text = add_to_cat_dict("r_c", cluster, x, rel, r, random_cat, text, cat_dict)
         # Other Clan
-        if "o_c" in text:
-            if "o_c" in other_dict:
-                text = re.sub(r'(?<!\/)o_c(?!\/)', str(other_dict["o_c"].name), text)
-            else:
-                other_clan = choice(game.clan.all_clans)
-                if not other_clan:
-                    return ""
-                other_dict["o_c"] = other_clan
-                text = re.sub(r'(?<!\/)o_c(?!\/)', str(other_clan.name), text)
+        if o_c_allowed is True:
+            if "o_c" in text:
+                if "o_c" in other_dict:
+                    text = re.sub(r'(?<!\/)o_c(?!\/)', str(other_dict["o_c"].name), text)
+                else:
+                    other_clan = choice(game.clan.all_clans)
+                    if not other_clan:
+                        return ""
+                    other_dict["o_c"] = other_clan
+                    text = re.sub(r'(?<!\/)o_c(?!\/)', str(other_clan.name), text)
 
         # Your DF Mentor
         if "df_m_n" in text:
@@ -4101,7 +4119,13 @@ def adjust_txt(Cat, text, cat, cat_dict, r_c_allowed):
             text, in_dict = cat_dict_check("d_c", cluster, x, rel, r, text, cat_dict)
 
             if in_dict is False:
-                dead_cat = Cat.all_cats.get(choice(game.clan.starclan_cats))
+                if "grief stricken" in cat.illnesses:
+                    dead_cat = Cat.all_cats.get(choice(game.clan.starclan_cats))
+                    try:
+                        dead_cat = Cat.all_cats.get(cat.illnesses['grief stricken'].get("grief_cat"))
+                    except:
+                        pass
+
                 addon_check = abbrev_addons(cat, dead_cat, cluster, x, rel, r)
 
                 counter = 0
@@ -4119,19 +4143,6 @@ def adjust_txt(Cat, text, cat, cat_dict, r_c_allowed):
                 # text = " ".join(words)
 
                 text = add_to_cat_dict("d_c", cluster, x, rel, r, dead_cat, text, cat_dict)
-
-                if cluster and rel:
-                    cat_dict[f"{r}_d_c_{x}"] = dead_cat
-                    text = re.sub(fr'(?<!\/){r}_d_c_{x}(?!\/)', str(dead_cat.name), text)
-                elif cluster and not rel:
-                    cat_dict[f"d_c_{x}"] = dead_cat
-                    text = re.sub(fr'(?<!\/)d_c_{x}(?!\/)', str(dead_cat.name), text)
-                elif rel and not cluster:
-                    cat_dict[f"{r}_d_c"] = dead_cat
-                    text = re.sub(fr'(?<!\/){r}_d_c(?!\/)', str(dead_cat.name), text)
-                else:
-                    cat_dict["d_c"] = dead_cat
-                    text = re.sub(r'(?<!\/)d_c(?!\/)', str(dead_cat.name), text)
 
         # Random dark forest cat
         if "rdf_c" in text:
