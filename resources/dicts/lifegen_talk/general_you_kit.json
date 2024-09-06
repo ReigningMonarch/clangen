@@ -135,7 +135,7 @@
         ],
         [
             "Aw ... little guy hasn't even gotten {PRONOUN/y_c/poss} eyes open yet!",
-            "{PRONOUN/y_c/subject} {VERB/y_c/are/is} gonna be a killer, though. I can already tell. See {PRONOUN/y_c/poss} little paws? This kit's got fight in {PRONOUN/y_c/object}!"
+            "{PRONOUN/y_c/subject/CAP} {VERB/y_c/are/is} gonna be a killer, though. I can already tell. See {PRONOUN/y_c/poss} little paws? This kit's got fight in {PRONOUN/y_c/object}!"
         ]
     ],
     "assertive_tonewborn_2": [
@@ -5265,7 +5265,7 @@
         [
             "y_c, did I hear r_w right? Did you sneak into the warriors' den this morning?",
             "I know you're excited to grow up, but you can't do things like that! It's important to stay out of trouble, and not bother other cats...",
-            "[y_c goes on for a bit about why it's important for you to be careful and quiet and <i>boring</i>.]"
+            "[t_c goes on for a bit about why it's important for you to be careful and quiet and <i>boring</i>.]"
         ]
     ],
     "neurotic_tokit_SQ2": [
@@ -5282,7 +5282,7 @@
         ],
         [
             "Oh! Hey, y_c. Sorry, I don't really know how to deal with... uh...",
-            "[y_c's gaze lands on a clump of dandelion fuzz, caught on a patch of grass. {PRONOUN/t_c/subject/CAP} {VERB/t_c/bat/bats} it your way.]",
+            "[t_c's gaze lands on a clump of dandelion fuzz, caught on a patch of grass. {PRONOUN/t_c/subject/CAP} {VERB/t_c/bat/bats} it your way.]",
             "Um... here! Play with that for a bit, maybe?"
         ]
     ],
@@ -5470,6 +5470,95 @@
             "[When you spot a bird's shadow on the ground, however, you're swift to race under t_c... Before looking up to see a little finch. {PRONOUN/t_c/subject} {VERB/t_c/laugh/laughs} softly, making your whiskers twitch and ears heat in embarrassment.]",
             "[False alarm, but t_c is quite pleased that you've been keeping up with your lessons. {PRONOUN/t_c/subject/CAP} {VERB/t_c/lick/licks} the top of your head as {PRONOUN/t_c/poss} body rumbles with a deep purr.]",
             "[Eventually, {PRONOUN/t_c/subject}{VERB/t_c/'re/'s} content to leave you to the queens given your level of vigilance]"
+        ]
+    ],
+    "skill_J4": [
+        [
+            "brooding",
+            "cool",
+            "they_kitsitter",
+            "you_kitten",
+            "min_platonic_10"
+        ],
+        [
+            "Hey, kiddo. Uh, I'm kind of busy right now. Could we play later?",
+            "[You persist.]",
+            "Okay. Um, here.",
+            "[t_c picks up a nearby stick, reels back, and chucks it across camp. You race after it to bring it back!]",
+            "[But when you turn around again, stick in your jaws, t_c has disappeared.]",
+            "[Hide and seek now, is it? t_c is so fun to play with!]"
+        ]
+    ],
+    "deaf_shunned_J1": [
+        [
+            "you_kitten",
+            "you_shunned",
+            "you_deaf",
+            "they_deaf",
+            "they_adult"
+        ],
+        [
+            "[You see pity in the eyes of every cat you look at, including t_c.]",
+            "[Why keep punishing you, if {PRONOUN/t_c/subject} {VERB/t_c/feel/feels} so bad?!]"
+        ]
+    ],
+    "deaf_shunned_J2": [
+        [
+            "you_kitten",
+            "you_shunned",
+            "you_deaf",
+            "they_deaf",
+            "they_kitten"
+        ],
+        [
+            "[t_c is playing with a feather, passing it from paw to paw, all alone.]",
+            "[When you look at {PRONOUN/t_c/object} imploringly, {PRONOUN/t_c/subject} just {VERB/t_c/turn/turns} away awkwardly.]"
+        ]
+    ],
+    "deaf_shunned_J3": [
+        [
+            "you_kitten",
+            "you_shunned",
+            "you_deaf",
+            "they_deaf",
+            "they_older",
+            "brooding",
+            "cool"
+        ],
+        [
+            "[You look at t_c with your best, saddest face, but {PRONOUN/t_c/subject} {VERB/t_c/don't/doesn't} seem to have any sympathy for you.]"
+        ]
+    ],
+    "deaf_shunned_J4": [
+        [
+            "you_kitten",
+            "you_shunned",
+            "you_deaf",
+            "they_deaf",
+            "from_parent",
+            "from_adopted_parent",
+            "neurotic",
+            "stable",
+            "sweet"
+        ],
+        [
+            "[With nothing else to do all day, you've been rolling around in the dirt. When t_c catches a glimpse of you from across camp, {PRONOUN/t_c/subject} quickly {VERB/t_c/look/looks} both ways to make sure no cat is watching before racing towards you.]",
+            "[Your {PRONOUN/t_c/parent} scoops you up and starts licking you clean, rushing to do so before a patrol returns to yell at {PRONOUN/t_c/object}.]",
+            "[You pretend to be indignant, but you secretly missed bathtime!]"
+        ]
+    ],
+    "deaf_shunned_J5": [
+        [
+            "you_kitten",
+            "you_shunned",
+            "from_parent",
+            "from_adopted_parent",
+            "you_deaf",
+            "they_deaf",
+            "they_blind"
+        ],
+        [
+            "[t_c grabs y_l and hides {PRONOUN/y_l/object} underneath {PRONOUN/t_c/object} when you approach.]"
         ]
     ]
 }
