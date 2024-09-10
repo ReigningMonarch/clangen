@@ -10,7 +10,7 @@ from .Screens import Screens
 from scripts.utility import generate_sprite, get_cluster, pronoun_repl, adjust_txt
 from scripts.cat.cats import Cat
 from scripts.game_structure import image_cache
-from scripts.game_structure.ui_elements import IDImageButton, UIImageButton, UISpriteButton
+from scripts.game_structure.ui_elements import UIImageButton
 import pygame_gui
 from scripts.game_structure.game_essentials import game, screen_x, screen_y, MANAGER, screen
 from enum import Enum  # pylint: disable=no-name-in-module
@@ -554,6 +554,7 @@ class TalkScreen(Screens):
                 and "they_app" not in tags
                 and "you_app" not in tags
                 and "they_adult" not in tags
+                and "they_not_kit" not in tags
                 and "you_adult" not in tags
                 ):
                 continue
@@ -817,6 +818,9 @@ class TalkScreen(Screens):
                 continue
 
             if "you_not_kit" in tags and game.clan.your_cat.moons < 6:
+                continue
+
+            if "they_not_kit" in tags and cat.moons < 6:
                 continue
 
 
@@ -1401,7 +1405,7 @@ class TalkScreen(Screens):
                     continue
                 if talk_key.startswith("good_opinion") and cat.relationships[leader_id].platonic_like < 30:
                     continue
-                elif talk_key.startswith("bad_opinion") and cat.relationships[leader_id].dislike < 30:
+                if talk_key.startswith("bad_opinion") and cat.relationships[leader_id].dislike < 30:
                     continue
             
             if game.clan.focus_cat:
@@ -1430,7 +1434,7 @@ class TalkScreen(Screens):
 
                     if "you_murderer" in tags and murdered_them is False:
                         continue
-                    elif "you_not_murderer" in tags and murdered_them:
+                    if "you_not_murderer" in tags and murdered_them:
                         continue
 
             # dead moons tags!

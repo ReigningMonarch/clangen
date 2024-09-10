@@ -1235,6 +1235,7 @@ class ProfileScreen(Screens):
 
             if (
                 (not self.the_cat.dead and self.the_cat.outside) or
+                (not self.the_cat.dead and not self.the_cat.outside and game.clan.your_cat.outside and not game.clan.your_cat.dead) or 
                 game.clan.your_cat.moons < 0 or
                 self.the_cat.ID == game.clan.your_cat.ID or
                 ((game.clan.your_cat.dead or self.the_cat.dead) and dead_talk is False)
@@ -1257,6 +1258,7 @@ class ProfileScreen(Screens):
             cant_insult = False
             if (
                 self.the_cat.outside or
+                (not self.the_cat.dead and not self.the_cat.outside and game.clan.your_cat.outside and not game.clan.your_cat.dead) or 
                 game.clan.your_cat.moons < 0 or
                 self.the_cat.ID == game.clan.your_cat.ID or
                 (game.clan.your_cat.dead is True or self.the_cat.dead is True and
@@ -1285,6 +1287,7 @@ class ProfileScreen(Screens):
                 self.the_cat.outside or
                 game.clan.your_cat.moons < 0 or
                 self.the_cat.ID == game.clan.your_cat.ID or
+                (not self.the_cat.dead and not self.the_cat.outside and game.clan.your_cat.outside and not game.clan.your_cat.dead) or 
                 (game.clan.your_cat.dead is True or self.the_cat.dead is True and
                 dead_talk is False) or
                 not self.the_cat.is_dateable(game.clan.your_cat) or
@@ -2073,7 +2076,7 @@ class ProfileScreen(Screens):
                 if 'clan_born' in beginning and beginning['clan_born']:
                     text += " {PRONOUN/m_c/subject/CAP} {VERB/m_c/were/was} born on Moon " + str(
                         beginning['moon']) + " during " + str(beginning['birth_season']) + "."
-                elif 'age' in beginning and beginning['age']:
+                elif 'age' in beginning and beginning['age'] and not self.the_cat.outside:
                     text += " {PRONOUN/m_c/subject/CAP} joined the Clan on Moon " + str(
                         beginning['moon']) + " at the age of " + str(beginning['age']) + " Moons."
                 else:
@@ -2886,7 +2889,7 @@ class ProfileScreen(Screens):
             new_inv = cat.pelt.inventory
         else:
             for ac in cat.pelt.inventory:
-                if self.search_bar.get_text().lower() in ac.lower():
+                if ac and self.search_bar.get_text() and self.search_bar.get_text().lower() in ac.lower():
                     inventory_len+=1
                     new_inv.append(ac)
         self.max_pages = math.ceil(inventory_len/18)

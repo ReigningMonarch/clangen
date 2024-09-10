@@ -1395,6 +1395,10 @@ def gather_cat_objects(
             out_set.add(event.patrol_leader)
         elif abbr == "s_c":
             out_set.add(stat_cat)
+        # LG
+        elif abbr == "y_c":
+            out_set.add(game.clan.your_cat)
+        # ---
         elif abbr == "app1" and len(event.patrol_apprentices) >= 1:
             out_set.add(event.patrol_apprentices[0])
         elif abbr == "app2" and len(event.patrol_apprentices) >= 2:
@@ -3916,7 +3920,7 @@ def adjust_txt(Cat, text, cat, cat_dict, r_c_allowed, o_c_allowed):
                 kit = Cat.fetch_cat(choice(cat.inheritance.get_children()))
                 addon_check = abbrev_addons(cat, kit, cluster, x, rel, r)
 
-                if kit.moons >= 6 or kit.outside or kit.dead or kit.ID == cat.ID or\
+                if kit.moons >= 6 or kit.outside or kit.dead or kit.ID == cat.ID or kit.ID == you.ID or\
                 addon_check is False:
                     return ""
                 
@@ -3947,7 +3951,7 @@ def adjust_txt(Cat, text, cat, cat_dict, r_c_allowed, o_c_allowed):
                 kit = Cat.fetch_cat(choice(cat.inheritance.get_children()))
                 addon_check = abbrev_addons(cat, kit, cluster, x, rel, r)
 
-                if kit.outside or kit.dead or kit.ID == cat.ID or addon_check is False:
+                if kit.outside or kit.dead or kit.ID == cat.ID or kit.ID == you.ID or addon_check is False:
                     return ""
                 
                 text = add_to_cat_dict("t_k", cluster, x, rel, r, kit, text, cat_dict)
