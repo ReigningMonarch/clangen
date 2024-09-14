@@ -474,6 +474,7 @@ class ProfileScreen(Screens):
                 if not self.the_cat.dead and not game.clan.your_cat.dead and game.clan.your_cat.ID in self.the_cat.relationships and self.the_cat.ID in game.clan.your_cat.relationships and game.clan.your_cat.shunned == 0:
                     self.the_cat.relationships[game.clan.your_cat.ID].platonic_like += randint(0,5)
                     game.clan.your_cat.relationships[self.the_cat.ID].platonic_like += randint(0,5)
+                game.switches["talk_category"] = "talk"
                 self.change_screen('talk screen')
             elif "insult" in self.profile_elements and \
                     event.ui_element == self.profile_elements["insult"]:
@@ -489,11 +490,13 @@ class ProfileScreen(Screens):
                     game.clan.your_cat.relationships[self.the_cat.ID].comfortable -= randint(1,5)
                     game.clan.your_cat.relationships[self.the_cat.ID].trust -= randint(1,5)
                     game.clan.your_cat.relationships[self.the_cat.ID].admiration -= randint(1,5)
-                self.change_screen('insult screen')
+                game.switches["talk_category"] = "insult"
+                self.change_screen('talk screen')
             elif "flirt" in self.profile_elements and \
                     event.ui_element == self.profile_elements["flirt"]:
                 self.the_cat.flirted = True
-                self.change_screen('flirt screen')
+                game.switches["talk_category"] = "flirt"
+                self.change_screen('talk screen')
             elif event.ui_element == self.profile_elements["med_den"]:
                 self.change_screen('med den screen')
             elif "mediation" in self.profile_elements and event.ui_element == self.profile_elements["mediation"]:
@@ -1235,6 +1238,7 @@ class ProfileScreen(Screens):
 
             if (
                 (not self.the_cat.dead and self.the_cat.outside) or
+                (not self.the_cat.dead and not self.the_cat.outside and game.clan.your_cat.outside and not game.clan.your_cat.dead) or 
                 game.clan.your_cat.moons < 0 or
                 self.the_cat.ID == game.clan.your_cat.ID or
                 ((game.clan.your_cat.dead or self.the_cat.dead) and dead_talk is False)
@@ -1257,6 +1261,7 @@ class ProfileScreen(Screens):
             cant_insult = False
             if (
                 self.the_cat.outside or
+                (not self.the_cat.dead and not self.the_cat.outside and game.clan.your_cat.outside and not game.clan.your_cat.dead) or 
                 game.clan.your_cat.moons < 0 or
                 self.the_cat.ID == game.clan.your_cat.ID or
                 (game.clan.your_cat.dead is True or self.the_cat.dead is True and
@@ -1285,6 +1290,7 @@ class ProfileScreen(Screens):
                 self.the_cat.outside or
                 game.clan.your_cat.moons < 0 or
                 self.the_cat.ID == game.clan.your_cat.ID or
+                (not self.the_cat.dead and not self.the_cat.outside and game.clan.your_cat.outside and not game.clan.your_cat.dead) or 
                 (game.clan.your_cat.dead is True or self.the_cat.dead is True and
                 dead_talk is False) or
                 not self.the_cat.is_dateable(game.clan.your_cat) or
@@ -2073,13 +2079,19 @@ class ProfileScreen(Screens):
                 if 'clan_born' in beginning and beginning['clan_born']:
                     text += " {PRONOUN/m_c/subject/CAP} {VERB/m_c/were/was} born on Moon " + str(
                         beginning['moon']) + " during " + str(beginning['birth_season']) + "."
-                elif 'age' in beginning and beginning['age']:
+                elif 'age' in beginning and beginning['age'] and not self.the_cat.outside:
                     text += " {PRONOUN/m_c/subject/CAP} joined the Clan on Moon " + str(
                         beginning['moon']) + " at the age of " + str(beginning['age']) + " Moons."
                 else:
                     text += "<br>You met {PRONOUN/m_c/object} on Moon " + str(beginning['moon']) + "."
             else:
                 text += "<br>You encountered {PRONOUN/m_c/object} on Moon " + str(beginning['moon']) + "."
+
+        if self.the_cat.history and self.the_cat.history.wrong_placement and self.the_cat.dead and not self.the_cat.outside:
+            if self.the_cat.df:
+                text += f"<br>{self.the_cat.name} was wrongly placed in the Dark Forest."
+            else:
+                text += f"<br>{self.the_cat.name} was wrongly placed in StarClan."
 
         text = process_text(text, cat_dict)
         if "o_c" in text:
@@ -2772,10 +2784,26 @@ class ProfileScreen(Screens):
         if self.the_cat.no_faith:
             self.the_cat.faith = 0
         cat_faith = round(self.the_cat.faith)
-        if cat_faith > 9:
-            cat_faith = 9
-        elif cat_faith < -9:
-            cat_faith = -9
+        if self.the_cat.lock_faith == "flexible":
+            if cat_faith > 9:
+                cat_faith = 9
+            elif cat_faith < -9:
+                cat_faith = -9
+        elif self.the_cat.lock_faith == "starclan":
+            if cat_faith > 9:
+                cat_faith = 9
+            elif cat_faith < 1:
+                cat_faith = 1
+        elif self.the_cat.lock_faith == "dark forest":
+            if cat_faith > -1:
+                cat_faith = -1
+            elif cat_faith < -9:
+                cat_faith = 9
+        elif self.the_cat.lock_faith == "neutral":
+            if cat_faith > 3:
+                cat_faith = 3
+            elif cat_faith < -3:
+                cat_faith = -3
         self.faith_bar = pygame_gui.elements.UIImage(scale(pygame.Rect((350, 1000), (842, 78))),
                                                                 image_cache.load_image(f"resources/images/faith{cat_faith}.png").convert_alpha())
         self.faith_bar.disable()
@@ -2886,7 +2914,7 @@ class ProfileScreen(Screens):
             new_inv = cat.pelt.inventory
         else:
             for ac in cat.pelt.inventory:
-                if self.search_bar.get_text().lower() in ac.lower():
+                if ac and self.search_bar.get_text() and self.search_bar.get_text().lower() in ac.lower():
                     inventory_len+=1
                     new_inv.append(ac)
         self.max_pages = math.ceil(inventory_len/18)
