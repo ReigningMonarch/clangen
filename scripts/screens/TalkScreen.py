@@ -3,31 +3,29 @@ import pygame
 import ujson
 import re
 
-from scripts.utility import scale
-
 from .Screens import Screens
 
 from scripts.utility import generate_sprite, get_cluster, pronoun_repl, adjust_txt
 from scripts.cat.cats import Cat
+from ..cat.history import History
 from scripts.game_structure import image_cache
-from scripts.game_structure.ui_elements import UIImageButton
+from scripts.game_structure.ui_elements import (
+    UIImageButton,
+    UISurfaceImageButton,
+)
 import pygame_gui
-from scripts.game_structure.game_essentials import game, screen_x, screen_y, MANAGER, screen
+from scripts.game_structure.game_essentials import game
 from enum import Enum  # pylint: disable=no-name-in-module
 from scripts.housekeeping.version import VERSION_NAME
+from scripts.special_dates import get_special_date, contains_special_date_tag
 # pylint: disable=consider-using-dict-items
 # pylint: disable=consider-using-enumerate
-
-class RelationType(Enum):
-    """An enum representing the possible age groups of a cat"""
-
-    BLOOD = ''                      # direct blood related - do not need a special print
-    ADOPTIVE = 'adoptive'       	# not blood related but close (parents, kits, siblings)
-    HALF_BLOOD = 'half sibling'   	# only one blood parent is the same (siblings only)
-    NOT_BLOOD = 'not blood related'	# not blood related for parent siblings
-    RELATED = 'blood related'   	# related by blood (different mates only)
-
-BLOOD_RELATIVE_TYPES = [RelationType.BLOOD, RelationType.HALF_BLOOD, RelationType.RELATED, RelationType.ADOPTIVE]
+from scripts.utility import get_text_box_theme, ui_scale, ui_scale_blit, ui_scale_offset, get_current_season, ui_scale_dimensions
+from scripts.game_structure.screen_settings import MANAGER
+from ..ui.generate_box import get_box, BoxStyles
+from ..ui.generate_button import ButtonStyles, get_button_dict
+from ..ui.get_arrow import get_arrow
+from ..ui.icon import Icon
 
 class TalkScreen(Screens):
 
@@ -63,6 +61,8 @@ class TalkScreen(Screens):
         self.replaced_index = (False, 0)
         self.other_dict = {}
 
+        self.testing = False
+
     def screen_switches(self):
         self.the_cat = Cat.all_cats.get(game.switches['cat'])
         self.cat_dict.clear()
@@ -75,19 +75,23 @@ class TalkScreen(Screens):
         self.created_choice_buttons = False
         self.profile_elements = {}
         self.clan_name_bg = pygame_gui.elements.UIImage(
-            scale(pygame.Rect((230, 875), (380, 70))),
+            ui_scale(pygame.Rect((115, 438), (190, 35))),
             pygame.transform.scale(
                 image_cache.load_image(
                     "resources/images/clan_name_bg.png").convert_alpha(),
                 (500, 870)),
             manager=MANAGER)
         self.profile_elements["cat_name"] = pygame_gui.elements.UITextBox(str(self.the_cat.name),
-                                                                    scale(pygame.Rect((300, 870), (-1, 80))),
+                                                                    ui_scale(pygame.Rect((150, 437), (-1, 40))),
                                                                         object_id="#text_box_34_horizcenter_light",
                                                                         manager=MANAGER)
 
+
         self.text_type = ""
-        self.texts = self.load_texts(self.the_cat)
+        if game.config["debug_meow_error_locating"]:
+            self.debug_meow_error_locator(self.the_cat)
+        else:
+            self.texts = self.load_texts(self.the_cat)
 
         if game.switches["talk_category"] == "flirt":
             flirt_success = self.is_flirt_success(self.the_cat)
@@ -107,31 +111,36 @@ class TalkScreen(Screens):
         self.talk_box_img = image_cache.load_image("resources/images/talk_box.png").convert_alpha()
 
         self.talk_box = pygame_gui.elements.UIImage(
-                scale(pygame.Rect((178, 942), (1248, 302))),
+                ui_scale(pygame.Rect((90, 470), (624, 151))),
                 self.talk_box_img
             )
 
-        self.back_button = UIImageButton(scale(pygame.Rect((50, 50), (210, 60))), "",
-                                        object_id="#back_button", manager=MANAGER)
-        self.scroll_container = pygame_gui.elements.UIScrollingContainer(scale(pygame.Rect((500, 970), (900, 300))))
+        self.back_button = UISurfaceImageButton(
+            ui_scale(pygame.Rect((25, 25), (153, 30))),
+            get_arrow(5, arrow_left=True) + " Back",
+            get_button_dict(ButtonStyles.SQUOVAL, (153, 30)),
+            object_id="@buttonstyles_squoval",
+            manager=MANAGER,
+        )
+        self.scroll_container = pygame_gui.elements.UIScrollingContainer(ui_scale(pygame.Rect((250, 475), (450, 150))))
         self.text = pygame_gui.elements.UITextBox("",
-                                                scale(pygame.Rect((0, 0), (900, -100))),
+                                                ui_scale(pygame.Rect((0, 10), (450, -100))),
                                                 object_id="#text_box_30_horizleft",
                                                 container=self.scroll_container,
                                                 manager=MANAGER)
 
         self.textbox_graphic = pygame_gui.elements.UIImage(
-                scale(pygame.Rect((170, 942), (346, 302))),
+                ui_scale(pygame.Rect((90, 471), (163, 150))),
                 image_cache.load_image("resources/images/textbox_graphic.png").convert_alpha()
             )
         # self.textbox_graphic.hide()
 
-        self.profile_elements["cat_image"] = pygame_gui.elements.UIImage(scale(pygame.Rect((70, 900), (400, 400))),
+        self.profile_elements["cat_image"] = pygame_gui.elements.UIImage(ui_scale(pygame.Rect((35, 450), (200, 200))),
                                                                         pygame.transform.scale(
                                                                             generate_sprite(self.the_cat),
-                                                                            (400, 400)), manager=MANAGER)
+                                                                            (200, 200)), manager=MANAGER)
         self.paw = pygame_gui.elements.UIImage(
-                scale(pygame.Rect((1370, 1180), (30, 30))),
+                ui_scale(pygame.Rect((685, 590), (15, 15))),
                 image_cache.load_image("resources/images/cursor.png").convert_alpha()
             )
         self.paw.visible = False
@@ -166,19 +175,17 @@ class TalkScreen(Screens):
         self.option_bgs = {}
 
     def update_camp_bg(self):
-        light_dark = "light"
-        if game.settings["dark mode"]:
-            light_dark = "dark"
+        light_dark = "dark" if game.settings["dark mode"] else "light"
 
-        camp_bg_base_dir = 'resources/images/camp_bg/'
+        camp_bg_base_dir = "resources/images/camp_bg/"
         leaves = ["newleaf", "greenleaf", "leafbare", "leaffall"]
         camp_nr = game.clan.camp_bg
 
         if camp_nr is None:
-            camp_nr = 'camp1'
+            camp_nr = "camp1"
             game.clan.camp_bg = camp_nr
 
-        available_biome = ['Forest', 'Mountainous', 'Plains', 'Beach']
+        available_biome = ["Forest", "Mountainous", "Plains", "Beach"]
         biome = game.clan.biome
         if biome not in available_biome:
             biome = available_biome[0]
@@ -187,42 +194,80 @@ class TalkScreen(Screens):
 
         all_backgrounds = []
         for leaf in leaves:
-
-            platform_dir = ""
-            if self.the_cat.dead and self.the_cat.outside and not self.the_cat.df:
-                platform_dir = "resources/images/urbg.png"
-            elif self.the_cat.dead and not self.the_cat.outside and not self.the_cat.df:
-                platform_dir = "resources/images/dead_camps/scbackground_sunsetclouds.png"
-                # maybe one day itll differ based on biome
-                # if game.clan.biome == "Forest":
-                #     platform_dir = "resources/images/dead_camps/scbackground_sunsetclouds.png"
-                # else:
-                #     platform_dir = "resources/images/starclanbg.png"
-            elif self.the_cat.dead and not self.the_cat.outside and self.the_cat.df:
-                platform_dir = "resources/images/dead_camps/dfbackground_eclipse.png"
-            else:
-                platform_dir = f'{camp_bg_base_dir}/{biome}/{leaf}_{camp_nr}_{light_dark}.png'
+            platform_dir = (
+                f"{camp_bg_base_dir}/{biome}/{leaf}_{camp_nr}_{light_dark}.png"
+            )
             all_backgrounds.append(platform_dir)
+        
+        #LG
+        starclan_camp = "resources/images/dead_camps/scbackground_sunsetclouds.png"
+        df_camp = "resources/images/dead_camps/dfbackground_eclipse.png"
+        ur_camp = "resources/images/urbg.png"
 
-        self.newleaf_bg = pygame.transform.scale(
-            pygame.image.load(all_backgrounds[0]).convert(), (screen_x, screen_y))
-        self.greenleaf_bg = pygame.transform.scale(
-            pygame.image.load(all_backgrounds[1]).convert(), (screen_x, screen_y))
-        self.leafbare_bg = pygame.transform.scale(
-            pygame.image.load(all_backgrounds[2]).convert(), (screen_x, screen_y))
-        self.leaffall_bg = pygame.transform.scale(
-            pygame.image.load(all_backgrounds[3]).convert(), (screen_x, screen_y))
+        if (
+            self.the_cat.dead and
+            not self.the_cat.df and
+            not self.the_cat.outside
+            ):
+            all_backgrounds = [
+                starclan_camp,
+                starclan_camp,
+                starclan_camp,
+                starclan_camp
+            ]
+        elif (
+            self.the_cat.dead and
+            not self.the_cat.df and
+            self.the_cat.outside
+        ):
+            all_backgrounds = [
+                ur_camp,
+                ur_camp,
+                ur_camp,
+                ur_camp
+            ]
+        elif (
+            self.the_cat.dead and
+            self.the_cat.df
+        ):
+            all_backgrounds = [
+                df_camp,
+                df_camp,
+                df_camp,
+                df_camp
+            ]
+
+        self.add_bgs(
+            {
+                "Newleaf": pygame.transform.scale(
+                    pygame.image.load(all_backgrounds[0]).convert(),
+                    ui_scale_dimensions((800, 700)),
+                ),
+                "Greenleaf": pygame.transform.scale(
+                    pygame.image.load(all_backgrounds[1]).convert(),
+                    ui_scale_dimensions((800, 700)),
+                ),
+                "Leaf-bare": pygame.transform.scale(
+                    pygame.image.load(all_backgrounds[2]).convert(),
+                    ui_scale_dimensions((800, 700)),
+                ),
+                "Leaf-fall": pygame.transform.scale(
+                    pygame.image.load(all_backgrounds[3]).convert(),
+                    ui_scale_dimensions((800, 700)),
+                ),
+            },
+            {
+                "Newleaf": None,
+                "Greenleaf": None,
+                "Leaf-bare": None,
+                "Leaf-fall": None,
+            },
+        )
+
+        self.set_bg(get_current_season())
 
     def on_use(self):
-        if game.clan.clan_settings['backgrounds']:
-            if game.clan.current_season == 'Newleaf':
-                screen.blit(self.newleaf_bg, (0, 0))
-            elif game.clan.current_season == 'Greenleaf':
-                screen.blit(self.greenleaf_bg, (0, 0))
-            elif game.clan.current_season == 'Leaf-bare':
-                screen.blit(self.leafbare_bg, (0, 0))
-            elif game.clan.current_season == 'Leaf-fall':
-                screen.blit(self.leaffall_bg, (0, 0))
+        super().on_use()
         now = pygame.time.get_ticks()
         if self.texts:
             if self.texts[self.text_index][0] == "[" and self.texts[self.text_index][-1] == "]":
@@ -235,11 +280,11 @@ class TalkScreen(Screens):
                 random_cat = self.cat_dict["r_c"]
                 self.profile_elements["cat_name"].kill()
                 self.profile_elements["cat_name"] = pygame_gui.elements.UITextBox(str(random_cat.name),
-                                                                    scale(pygame.Rect((300, 870), (-1, 80))),
+                                                                    ui_scale(pygame.Rect((300, 870), (-1, 80))),
                                                                         object_id="#text_box_34_horizcenter_light",
                                                                         manager=MANAGER)
                 self.profile_elements["cat_image"].kill()
-                self.profile_elements["cat_image"] = pygame_gui.elements.UIImage(scale(pygame.Rect((70, 900), (400, 400))),
+                self.profile_elements["cat_image"] = pygame_gui.elements.UIImage(ui_scale(pygame.Rect((70, 900), (400, 400))),
                                                                         pygame.transform.scale(
                                                                             generate_sprite(random_cat),
                                                                             (400, 400)), manager=MANAGER)
@@ -248,11 +293,11 @@ class TalkScreen(Screens):
             elif self.replaced_index[0] and self.text_index != self.replaced_index[1]:
                 self.profile_elements["cat_name"].kill()
                 self.profile_elements["cat_name"] = pygame_gui.elements.UITextBox(str(self.the_cat.name),
-                                                                    scale(pygame.Rect((300, 870), (-1, 80))),
+                                                                    ui_scale(pygame.Rect((300, 870), (-1, 80))),
                                                                         object_id="#text_box_34_horizcenter_light",
                                                                         manager=MANAGER)
                 self.profile_elements["cat_image"].kill()
-                self.profile_elements["cat_image"] = pygame_gui.elements.UIImage(scale(pygame.Rect((70, 900), (400, 400))),
+                self.profile_elements["cat_image"] = pygame_gui.elements.UIImage(ui_scale(pygame.Rect((70, 900), (400, 400))),
                                                                         pygame.transform.scale(
                                                                             generate_sprite(self.the_cat),
                                                                             (400, 400)), manager=MANAGER)
@@ -304,6 +349,50 @@ class TalkScreen(Screens):
                     self.frame_index = len(self.text_frames[self.text_index]) - 1  # Go to the last frame
             
         return
+    
+    def debug_meow_error_locator(self, cat):
+        """
+        When talking to one cat, searches through all cats and identifies if any of them would cause a meow error.
+        """
+        test_texts = {}
+        for kitty in Cat.all_cats_list:
+            if kitty == game.clan.your_cat:
+                continue
+            test_texts[kitty] = self.load_texts(kitty)
+        meows = []
+        for dialogue in test_texts.items():
+            # print(dialogue[1])
+            if "#dialogue-bugs" in str(dialogue[1]):
+                # skip over the dialogue that doesnt need anything bc its impossible anyway
+                if game.clan.your_cat.status == "newborn" and dialogue[0].dead:
+                    continue
+                if dialogue[0].outside and not dialogue[0].dead:
+                    continue
+                if game.clan.your_cat.dead and dialogue[0].status == "newborn":
+                    continue
+                if dialogue[0].dead and game.switches["talk_category"] in ["insult", "flirt"]:
+                    continue
+                if game.switches["talk_category"] == "flirt" and not dialogue[0].is_dateable(game.clan.your_cat):
+                    continue
+                self.text_type = ""
+                meows.append(dialogue)
+                print("----------------")
+                print("Meow error!", game.switches["talk_category"].upper())
+                print("You:", game.clan.your_cat.name)
+                print("Them: ", dialogue[0].name)
+                if self.the_cat == dialogue[0]:
+                    text = self.load_and_replace_placeholders(
+                        "resources/dicts/lifegen_talk/general.json",
+                        self.the_cat,
+                        game.clan.your_cat
+                        )[1]
+                    self.texts = self.get_adjusted_txt(text, dialogue[0])
+                else:
+                    self.texts = [f"Meow error found for {game.clan.your_cat.name} and {dialogue[0].name}."]
+        if not meows:
+            print("No meows possible right neow!")
+            self.text_type = ""
+            self.texts = self.load_texts(self.the_cat)
 
     def get_cluster_list(self):
         return ["assertive", "brooding", "cool", "upstanding", "introspective", "neurotic", "silly", "stable", "sweet", "unabashed", "unlawful"]
@@ -362,15 +451,15 @@ class TalkScreen(Screens):
             text = text[0]
 
             #the background image for the text
-            option_bg = pygame_gui.elements.UIImage(scale(pygame.Rect((860, 855 + y_pos), (540, 70))),
+            option_bg = pygame_gui.elements.UIImage(ui_scale(pygame.Rect((430, 427 + y_pos), (270, 35))),
                                                             pygame.transform.scale(
                                                                 image_cache.load_image(
                                                                     "resources/images/option_bg.png").convert_alpha(),
-                                                                (540, 60)), manager=MANAGER)
+                                                                (270, 35)), manager=MANAGER)
             self.option_bgs[c] = option_bg
 
             #the button for dialogue choices
-            button = UIImageButton(scale(pygame.Rect((780, 855 + y_pos), (68, 68))),
+            button = UIImageButton(ui_scale(pygame.Rect((390, 427 + y_pos), (34, 34))),
                                         text = "",
                                         object_id="#dialogue_choice_button", manager=MANAGER)
             self.choice_buttons[c] = button
@@ -378,12 +467,12 @@ class TalkScreen(Screens):
 
             #the text for dialogue choices
             option = pygame_gui.elements.UITextBox(str(text),
-                                                            scale(pygame.Rect((870, 860 + y_pos), (540, 60))),
+                                                            ui_scale(pygame.Rect((435, 430 + y_pos), (270, 30))),
                                                             object_id="#text_box_30_horizleft",
                                                             manager=MANAGER)
             self.text_choices[c] = option
 
-            y_pos -= 80
+            y_pos -= 40
 
     def handle_choice(self, cat):
         for b in self.choice_buttons:
@@ -404,9 +493,11 @@ class TalkScreen(Screens):
 
 
     def load_texts(self, cat):
-        you = game.clan.your_cat
         resource_dir = "resources/dicts/lifegen_talk/"
         possible_texts = {}
+        you = game.clan.your_cat
+
+        special_date = get_special_date()
 
         if game.switches["talk_category"] == "insult":
             with open(f"{resource_dir}insults.json", 'r') as read_file:
@@ -461,6 +552,17 @@ class TalkScreen(Screens):
                         with open(f"{resource_dir}focuses/{game.clan.focus}.json", 'r') as read_file:
                             possible_texts5 = ujson.loads(read_file.read())
                             possible_texts.update(possible_texts5)
+
+                    if special_date:
+                        with open(f"{resource_dir}focuses/{special_date.patrol_tag}.json", 'r') as read_file:
+                            special_dialogue = ujson.loads(read_file.read())
+                            possible_texts.update(special_dialogue)
+                            
+                    if game.config['fun']['april_fools']:
+                        with open(f"{resource_dir}focuses/aprilfools.json", 'r') as read_file:
+                            aprilfools_dialogue = ujson.loads(read_file.read())
+                            possible_texts.update(aprilfools_dialogue)
+
                     
         return self.filter_texts(cat, possible_texts)
 
@@ -544,6 +646,7 @@ class TalkScreen(Screens):
             'song', 'grace', 'clean', 'innovator', 'comforter', 'matchmaker', 'thinker',
             'cooperative', 'scholar', 'time', 'treasure', 'fisher', 'language', 'sleeper', 'dark'
         ]
+        special_date = get_special_date()
         for talk_key, talk in possible_texts.items():
             tags = talk["tags"] if "tags" in talk else talk[0]
             for i in range(len(tags)):
@@ -553,7 +656,11 @@ class TalkScreen(Screens):
                 if game.config["debug_ensure_dialogue"] == talk_key:
                     pass
 
-            if game.switches["talk_category"] == "talk" and ("insult" in tags or "flirt" in tags):
+            if contains_special_date_tag(tags):
+                if not special_date or special_date.patrol_tag not in tags:
+                    continue
+
+            if game.switches["talk_category"] == "talk" and ("insult" in tags or "reject" in tags or "accept" in tags):
                 continue
 
             if game.switches["talk_category"] == "insult" and "insult" not in tags:
@@ -582,12 +689,32 @@ class TalkScreen(Screens):
                     continue
 
             # Status tags
+
+            if game.clan.your_cat.shunned != 0:
+                murder_history = History.get_murders(game.clan.your_cat)
+                history = None
+                your_status = game.clan.your_cat.status
+                if "is_murderer" in murder_history:
+                    history = murder_history["is_murderer"]
+                else:
+                    your_status = game.clan.your_cat.status
+                if history:
+                    if "demoted_from" in history[-1] and history[-1]["demoted_from"]:
+                        your_status = history[-1]["demoted_from"]
+                    else:
+                        your_status = game.clan.your_cat.status
+                else:
+                    your_status = game.clan.your_cat.status
+            else:
+                your_status = game.clan.your_cat.status
+
             if (
-                you.status not in tags
+                your_status not in tags
                 and "any" not in tags
-                and f"you_{you.status}" not in tags
-                and f"you_{(you.status).replace(' ', '_')}" not in tags
+                and f"you_{your_status}" not in tags
+                and f"you_{(your_status).replace(' ', '_')}" not in tags
                 and "young elder" not in tags
+                and "you_young_elder" not in tags
                 and "no_kit" not in tags
                 and "you_any" not in tags
                 and "they_app" not in tags
@@ -598,6 +725,8 @@ class TalkScreen(Screens):
                 ):
                 continue
             elif "young elder" in tags and cat.status == 'elder' and cat.moons >= 100:
+                continue
+            elif "you_young_elder" in tags and you.status == 'elder' and you.moons >= 100:
                 continue
             elif "no_kit" in tags and (you.status in ['kitten', 'newborn'] or cat.status in ['kitten', 'newborn']):
                 continue
@@ -773,35 +902,34 @@ class TalkScreen(Screens):
             ]
 
             # does this do anything???
-            # line 556 seems to make this obsolete
 
             if any(r in roles for r in tags):
                 has_role = False
-                if "you_kitten" in tags and you.status == "kitten":
+                if "you_kitten" in tags and your_status == "kitten":
                     has_role = True
-                elif "you_apprentice" in tags and you.status == "apprentice":
+                elif "you_apprentice" in tags and your_status == "apprentice":
                     has_role = True
-                elif "you_medicine_cat_apprentice" in tags and you.status == "medicine cat apprentice":
+                elif "you_medicine_cat_apprentice" in tags and your_status == "medicine cat apprentice":
                     has_role = True
-                elif "you_mediator_apprentice" in tags and you.status == "mediator apprentice":
+                elif "you_mediator_apprentice" in tags and your_status == "mediator apprentice":
                     has_role = True
-                elif "you_queen's_apprentice" in tags and you.status == "queen's apprentice":
+                elif "you_queen's_apprentice" in tags and your_status == "queen's apprentice":
                     has_role = True
-                elif "you_warrior" in tags and you.status == "warrior":
+                elif "you_warrior" in tags and your_status == "warrior":
                     has_role = True
-                elif "you_mediator" in tags and you.status == "mediator":
+                elif "you_mediator" in tags and your_status == "mediator":
                     has_role = True
-                elif "you_medicine_cat" in tags and you.status == "medicine cat":
+                elif "you_medicine_cat" in tags and your_status == "medicine cat":
                     has_role = True
-                elif "you_queen" in tags and you.status == "queen":
+                elif "you_queen" in tags and your_status == "queen":
                     has_role = True
-                elif "you_deputy" in tags and you.status == "deputy":
+                elif "you_deputy" in tags and your_status == "deputy":
                     has_role = True
-                elif "you_leader" in tags and you.status == "leader":
+                elif "you_leader" in tags and your_status == "leader":
                     has_role = True
-                elif "you_elder" in tags and you.status == "elder":
+                elif "you_elder" in tags and your_status == "elder":
                     has_role = True
-                elif "you_newborn" in tags and you.status == "newborn":
+                elif "you_newborn" in tags and your_status == "newborn":
                     has_role = True
                 if not has_role:
                     continue
@@ -847,6 +975,7 @@ class TalkScreen(Screens):
 
             if "they_grieving" not in tags and "grief stricken" in cat.illnesses and not cat.dead:
                 continue
+
             if "you_grieving" in tags and "grief stricken" not in you.illnesses and not you.dead:
                 continue
 
@@ -1075,9 +1204,55 @@ class TalkScreen(Screens):
                 if not fam:
                     continue
 
+            # MURDER STUFF
+            if game.clan.murdered != {}:
+                # accomplice
+                if cat.ID == game.clan.murdered["accomplice"][0]:
+                    if "accomplice_agreed" in tags and game.clan.murdered["accomplice"][1] is False:
+                        continue
+                    elif "accomplice_refused" in tags and game.clan.murdered["accomplice"][1] is True:
+                        continue
+                
+                    if "not_accomplice" in tags:
+                        continue
+                else:
+                    if any(t in tags for t in ["accomplice", "accomplice_refused", "accomplice_agreed"]):
+                        continue
+                
+                # victim
+                if cat.ID == game.clan.murdered["victim"][0]:
+                    if "murder_victim" in tags and cat.ID != game.clan.murdered["victim"]:
+                        continue
+                    elif "not_murder_victim" in tags and cat.ID == game.clan.murdered["victim"]:
+                        continue
+                
+                # success/fail
+                if "murder_success" in tags and game.clan.murdered["success"] is False:
+                    continue
+                if "murder_fail" in tags and game.clan.murdered["success"] is True:
+                    continue
+
+                # discovered
+                if "murder_discovered" in tags and game.clan.murdered["discovered"] is False:
+                    continue
+                if "murder_not_discovered" in tags and game.clan.murdered["discovered"] is True:
+                    continue
+
+
+                if any(tag in tags for tag in [
+                    "accomplice_agreed", "accomplice_refused",
+                    "accomplice", "murder_victim",
+                    "not_murder_victim", "murder_success",
+                    "murder_fail"
+                    ]):
+                    if game.clan.murdered["murderer"] != game.clan.your_cat.ID:
+                        continue
+            
+            # ---
+
 
             if "non-related" in tags:
-                if you.inheritance.get_exact_rel_type(cat.ID) in BLOOD_RELATIVE_TYPES:
+                if cat.ID in you.get_relatives():
                     continue
 
             if "war" in tags:
@@ -1560,7 +1735,7 @@ class TalkScreen(Screens):
             if "deaf" in cat.permanent_condition:
                 add_on2 += " d"
             t_c_text += add_on2
-            possible_texts['general'][1][0] += f" {VERSION_NAME}"
+            possible_texts['general'][1][0] += f" {VERSION_NAME} {(game.switches['talk_category']).upper()}"
             possible_texts['general'][1][0] += "\n"
             possible_texts['general'][1][0] += y_c_text + f" {you.moons}"
             possible_texts['general'][1][0] += "\n"
@@ -1592,7 +1767,12 @@ class TalkScreen(Screens):
             "you_injured", "you_ill", "you_grieving", "they_grieving", "you_forgiven",
             "they_forgiven", "murderedyou", "murderedthem"
         ] # List of tags that increase the weight
+
+        special_date = get_special_date()
+        if special_date:
+            weighted_tags.append(special_date)
         weights = []
+
         for item in texts_list.values():
             tags = item["tags"] if "tags" in item else item[0]
             weight = 1
@@ -1667,6 +1847,7 @@ class TalkScreen(Screens):
             text_chosen_key_split = text_chosen_key.split("~")
             cat.connected_dialogue[text_chosen_key_split[0]] = int(text_chosen_key_split[1])
         game.clan.talks.append(text_chosen_key)
+
         return new_text
 
     def get_adjusted_txt(self, text, cat):

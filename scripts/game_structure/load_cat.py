@@ -5,7 +5,8 @@ from random import choice, randint
 
 import ujson
 
-from scripts.cat.cats import Cat, Personality, BACKSTORIES
+from scripts.cat.cats import Cat, BACKSTORIES
+from ..cat.personality import Personality
 from scripts.cat.pelts import Pelt
 from scripts.cat_relations.inheritance import Inheritance
 from scripts.housekeeping.version import SAVE_VERSION_NUMBER
@@ -64,6 +65,10 @@ def json_load():
                 cat["favourite"] = 1
 
             # moving clangen accs over to accessories + inventory
+            if "accessories" not in cat:
+                cat["accessories"] = []
+            if "inventory" not in cat:
+                cat["inventory"] = []
             if cat["accessory"] is not None:
                 cat["accessories"].append(cat["accessory"])
                 cat["inventory"].append(cat["accessory"])
