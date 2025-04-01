@@ -524,7 +524,9 @@ class Events:
             game.clan.focus_cat = None
             
         if not game.clan.focus:
-            if game.clan.war.get("at_war"):
+            if "debug_ensure_focus" in game.config and game.config["debug_ensure_focus"] and game.config["debug_ensure_focus"] in dialogue_focuses:
+                game.clan.focus = game.config["debug_ensure_focus"]
+            elif game.clan.war.get("at_war"):
                 game.clan.focus = "war"
             elif game.clan.freshkill_pile.total_amount < game.clan.freshkill_pile.amount_food_needed()*0.5:
                 game.clan.focus = "starving"
@@ -1505,7 +1507,10 @@ class Events:
             
     def generate_df_events(self):
         if random.randint(1,3) == 1:
-            evt = self.process_text(random.choice(self.df_txt["general"]))
+            possible_events = self.df_txt["general"]
+            if not game.clan.your_cat.graduated_df:
+                possible_events += self.df_txt["mentor"]
+            evt = self.process_text(random.choice(possible_events))
             if evt:
                 involved_cats = []
                 involved_cats.append(game.clan.your_cat.ID)
@@ -1524,6 +1529,7 @@ class Events:
                 r_clanmate = Cat.all_cats.get(random.choice(game.clan.clan_cats))
             
             r_clanmate.joined_df = True
+            r_clanmate.df_join_moon = game.clan.age
             r_clanmate.faith -= 1
             r_clanmate.update_df_mentor()
             self.cat_dict["c_m"] = r_clanmate
@@ -1537,6 +1543,22 @@ class Events:
             evt = Single_Event(evt_txt, ["alert"], r_clanmate.ID)
             if evt not in game.cur_events_list:
                 game.cur_events_list.insert(0, evt)
+        
+        
+        if game.clan.your_cat.df_patrols >= 1 and game.clan.age - game.clan.your_cat.df_join_moon >= 12 and not game.clan.your_cat.graduated_df:
+            game.clan.your_cat.graduated_df = True
+            evt = self.process_text(random.choice(self.df_txt["graduate"]))
+            if evt:
+                involved_cats = []
+                involved_cats.append(game.clan.your_cat.ID)
+                for i in self.cat_dict.items():
+                    involved_cats.append(i[1].ID)
+                evt = Single_Event(evt, ["alert"], [i for i in involved_cats])
+                if evt not in game.cur_events_list:
+                    game.cur_events_list.insert(0, evt)
+            Cat.all_cats[game.clan.your_cat.df_mentor].df_apprentices.remove(game.clan.your_cat.ID)
+            game.clan.your_cat.df_mentor = None
+            
 
     def handle_lead_den_event(self):
         """
